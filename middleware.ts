@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { verifyToken } from '@/lib/auth'
+import { verifyTokenEdge } from '@/lib/auth-edge'
 
 const publicPaths = ['/auth/login', '/auth/register', '/']
 const authPaths = ['/auth/login', '/auth/register']
@@ -16,7 +16,7 @@ export async function middleware(request: NextRequest) {
       
       if (token) {
         try {
-          await verifyToken(token)
+          await verifyTokenEdge(token)
           return NextResponse.redirect(new URL('/dashboard', request.url))
         } catch (error) {
           // Token invalid, allow access to auth pages
@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
   
   try {
     // Verify token
-    const payload = await verifyToken(token)
+    const payload = await verifyTokenEdge(token)
     
     // Add user info to headers for API routes
     const requestHeaders = new Headers(request.headers)

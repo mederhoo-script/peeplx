@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       customerEmail: escrow.buyer.email,
       paymentReference: reference,
       paymentDescription: `PeeplX Escrow: ${escrow.title}`,
-      redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/payment/callback?ref=${reference}&escrowId=${escrowId}`,
+      redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/payment/callback?ref=${reference}&escrowId=${escrowId}`,
       metadata: {
         escrowId,
         paymentId: payment.id,

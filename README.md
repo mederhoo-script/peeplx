@@ -48,7 +48,7 @@
 | **Forms & Validation** | React Hook Form, Zod |
 | **Database** | PostgreSQL via Supabase |
 | **ORM** | Prisma 6 |
-| **Auth** | JWT in httpOnly cookies (bcryptjs, jsonwebtoken) |
+| **Auth** | JWT tokens (`jose` for Edge Runtime, `jsonwebtoken` for Node.js), password hashing (`bcryptjs`) |
 | **Payments** | Monnify API |
 | **Deploy** | Vercel |
 
@@ -250,10 +250,27 @@ The project is configured for one-click deployment on **Vercel**.
 
 1. Fork/clone this repo
 2. Import into [Vercel](https://vercel.com/new)
-3. Add the environment variables from the table above as Vercel project secrets
+3. Add the environment variables listed below as **Vercel project secrets** (Settings → Environment Variables)
 4. Deploy — Vercel auto-detects Next.js and uses `vercel.json` config
 
-The `vercel.json` already maps all required env vars to Vercel secret references (`@database_url`, `@jwt_secret`, etc.).
+### Required Vercel Environment Variables
+
+| Variable | Description | Where to get it |
+|----------|-------------|-----------------|
+| `DATABASE_URL` | Supabase pooled connection string (port 6543, `?pgbouncer=true&connection_limit=1`) | Supabase → Settings → Database → Connection string → Transaction mode |
+| `DIRECT_URL` | Supabase direct connection string (port 5432) | Supabase → Settings → Database → Connection string → Session mode |
+| `JWT_SECRET` | HS256 secret for access tokens (min 32 chars) | `openssl rand -base64 64` |
+| `JWT_REFRESH_SECRET` | HS256 secret for refresh tokens (min 32 chars) | `openssl rand -base64 64` |
+| `NEXT_PUBLIC_APP_URL` | Your Vercel deployment URL (e.g. `https://peeplx.vercel.app`) | Vercel project URL |
+| `MONNIFY_API_KEY` | Monnify API key | [Monnify Dashboard](https://app.monnify.com) → API Keys |
+| `MONNIFY_SECRET_KEY` | Monnify secret key | Monnify Dashboard → API Keys |
+| `MONNIFY_CONTRACT_CODE` | Monnify contract code | Monnify Dashboard → Contracts |
+| `MONNIFY_WEBHOOK_SECRET` | Monnify webhook hash secret | Monnify Dashboard → Webhook settings |
+
+> **Note:** `MONNIFY_BASE_URL` defaults to `https://sandbox.monnify.com` for testing.  
+> Set it to `https://api.monnify.com` for production.
+
+The `vercel.json` maps each variable to a Vercel secret reference (e.g. `@database_url`). Create matching secrets in your Vercel team/project settings before deploying.
 
 ---
 

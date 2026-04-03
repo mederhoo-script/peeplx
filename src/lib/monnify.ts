@@ -130,7 +130,7 @@ class MonnifyClient {
         paymentDescription: params.paymentDescription,
         currencyCode: 'NGN',
         contractCode: MONNIFY_CONTRACT_CODE,
-        redirectUrl: params.redirectUrl || `${process.env.NEXT_PUBLIC_APP_URL}/payment/callback`,
+        redirectUrl: params.redirectUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/payment/callback`,
         paymentMethods: ['CARD', 'ACCOUNT_TRANSFER'],
         metadata: params.metadata,
       }

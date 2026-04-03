@@ -4,16 +4,5 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["iad1"],
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "DIRECT_URL": "@direct_url",
-    "JWT_SECRET": "@jwt_secret",
-    "JWT_REFRESH_SECRET": "@jwt_refresh_secret",
-    "MONNIFY_API_KEY": "@monnify_api_key",
-    "MONNIFY_SECRET_KEY": "@monnify_secret_key",
-    "MONNIFY_CONTRACT_CODE": "@monnify_contract_code",
-    "MONNIFY_WEBHOOK_SECRET": "@monnify_webhook_secret",
-    "NEXT_PUBLIC_APP_URL": "@next_public_app_url"
-  }
+  "regions": ["iad1"]
 }

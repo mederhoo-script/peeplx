@@ -1,0 +1,16 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "env": {
+    "DATABASE_URL": "@database_url",
+    "JWT_SECRET": "@jwt_secret",
+    "JWT_REFRESH_SECRET": "@jwt_refresh_secret",
+    "MONNIFY_API_KEY": "@monnify_api_key",
+    "MONNIFY_SECRET_KEY": "@monnify_secret_key",
+    "MONNIFY_CONTRACT_CODE": "@monnify_contract_code"
+  }
+}

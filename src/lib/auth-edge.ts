@@ -32,9 +32,13 @@ const JWT_SECRET_RAW =
 export async function verifyTokenEdge(token: string): Promise<TokenPayload> {
   const { payload } = await jwtVerify(token, getSecret(JWT_SECRET_RAW))
 
-  return {
-    userId: payload['userId'] as string,
-    email: payload['email'] as string,
-    role: payload['role'] as string,
+  const userId = payload['userId']
+  const email = payload['email']
+  const role = payload['role']
+
+  if (typeof userId !== 'string' || typeof email !== 'string' || typeof role !== 'string') {
+    throw new Error('Invalid token payload: missing required fields')
   }
+
+  return { userId, email, role }
 }

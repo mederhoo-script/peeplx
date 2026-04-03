@@ -48,7 +48,7 @@
 | **Forms & Validation** | React Hook Form, Zod |
 | **Database** | PostgreSQL via Supabase |
 | **ORM** | Prisma 6 |
-| **Auth** | JWT in httpOnly cookies (`jose`, `bcryptjs`, `jsonwebtoken`) |
+| **Auth** | JWT tokens (`jose` for Edge Runtime, `jsonwebtoken` for Node.js), password hashing (`bcryptjs`) |
 | **Payments** | Monnify API |
 | **Deploy** | Vercel |
 

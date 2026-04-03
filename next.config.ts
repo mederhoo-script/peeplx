@@ -6,14 +6,18 @@ const nextConfig: NextConfig = {
     domains: [],
     remotePatterns: [],
   },
-  // Proxy: transparently forward /api/* requests to the Next.js API routes.
-  // Swap the destination with an external base URL to route to a separate
-  // backend without changing any client-side fetch calls.
+  // Proxy: when NEXT_PUBLIC_API_URL is set to an external backend, all
+  // /api/* requests are forwarded there instead of being handled by the
+  // built-in Next.js API routes.  Leave the variable unset (or point it
+  // to the same origin) to keep the default behaviour.
   async rewrites() {
+    const externalApiUrl = process.env.NEXT_PUBLIC_API_URL
+    if (!externalApiUrl) return []
+
     return [
       {
         source: '/api/:path*',
-        destination: '/api/:path*',
+        destination: `${externalApiUrl}/api/:path*`,
       },
     ]
   },

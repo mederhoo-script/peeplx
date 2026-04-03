@@ -6,8 +6,11 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  // Pooled connection via Supabase Supavisor — used at runtime (serverless-safe)
+  url       = env("DATABASE_URL")
+  // Direct connection — used only by Prisma CLI (migrations, db push, studio)
+  directUrl = env("DIRECT_URL")
 }
 
 enum UserRole {

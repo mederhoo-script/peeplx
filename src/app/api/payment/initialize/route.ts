@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { monnifyClient } from '@/lib/monnify'
-import { prisma } from '@/lib/prisma'
+import { createServerClient } from '@/lib/supabase'
 import { generateReference } from '@/lib/utils'
 
 export async function POST(request: NextRequest) {
@@ -19,12 +19,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'escrowId is required' }, { status: 400 })
     }
 
-    const escrow = await prisma.escrowTransaction.findUnique({
-      where: { id: escrowId },
-      include: {
-        buyer: true,
-      },
-    })
+    const supabase = createServerClient()
+
+    const { data: escrow } = await supabase
+      .from('EscrowTransaction')
+      .select('*')
+      .eq('id', escrowId)
+      .single()
 
     if (!escrow) {
       return NextResponse.json({ error: 'Escrow not found' }, { status: 404 })
@@ -38,6 +39,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `Cannot fund an escrow with status: ${escrow.status}` }, { status: 400 })
     }
 
+    const { data: buyer } = await supabase
+      .from('User')
+      .select('id, firstName, lastName, email')
+      .eq('id', escrow.buyerId)
+      .single()
+
+    if (!buyer) {
+      return NextResponse.json({ error: 'Buyer not found' }, { status: 404 })
+    }
+
     // Amount comes from escrow record, NOT client input — prevents tampering
     const escrowAmountNaira = Number(escrow.amount)
     const serviceFee = escrowAmountNaira * 0.015
@@ -45,20 +56,27 @@ export async function POST(request: NextRequest) {
 
     const reference = generateReference('ESCROW')
 
-    const payment = await prisma.payment.create({
-      data: {
+    const { data: payment, error: paymentError } = await supabase
+      .from('Payment')
+      .insert({
         escrowId,
         userId: tokenPayload.userId,
         amount: escrow.amount,
         reference,
         status: 'PENDING',
-      },
-    })
+      })
+      .select('id')
+      .single()
+
+    if (paymentError || !payment) {
+      console.error('Payment creation error:', paymentError)
+      return NextResponse.json({ error: 'Failed to initialize payment' }, { status: 500 })
+    }
 
     const monnifyResponse = await monnifyClient.initializePayment({
       amount: totalAmount,
-      customerName: `${escrow.buyer.firstName} ${escrow.buyer.lastName}`,
-      customerEmail: escrow.buyer.email,
+      customerName: `${buyer.firstName} ${buyer.lastName}`,
+      customerEmail: buyer.email,
       paymentReference: reference,
       paymentDescription: `PeeplX Escrow: ${escrow.title}`,
       redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/payment/callback?ref=${reference}&escrowId=${escrowId}`,
@@ -70,16 +88,14 @@ export async function POST(request: NextRequest) {
     })
 
     if (!monnifyResponse.requestSuccessful) {
-      await prisma.payment.delete({ where: { id: payment.id } })
+      await supabase.from('Payment').delete().eq('id', payment.id)
       throw new Error(monnifyResponse.responseMessage)
     }
 
-    await prisma.payment.update({
-      where: { id: payment.id },
-      data: {
-        monnifyReference: monnifyResponse.responseBody.transactionReference,
-      },
-    })
+    await supabase
+      .from('Payment')
+      .update({ monnifyReference: monnifyResponse.responseBody.transactionReference })
+      .eq('id', payment.id)
 
     return NextResponse.json({
       success: true,

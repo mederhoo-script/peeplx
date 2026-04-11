@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { prisma } from '@/lib/prisma'
+import { createServerClient } from '@/lib/supabase'
 import { setAuthCookies } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
@@ -22,9 +22,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    })
+    const supabase = createServerClient()
+
+    const { data: existingUser } = await supabase
+      .from('User')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle()
 
     if (existingUser) {
       return NextResponse.json(
@@ -35,42 +39,56 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await bcrypt.hash(password, 12)
 
-    const user = await prisma.user.create({
-      data: {
+    const { data: user, error: userError } = await supabase
+      .from('User')
+      .insert({
         email,
         passwordHash,
         firstName,
         lastName,
         phone: phone || null,
-        wallet: {
-          create: {
-            availableBalance: 0,
-            escrowLockedBalance: 0,
-            pendingBalance: 0,
-            currency: 'NGN',
-          },
-        },
-        trustScoreData: {
-          create: {
-            score: 0,
-            totalTransactions: 0,
-            completedTransactions: 0,
-            disputeCount: 0,
-            cancelledCount: 0,
-            emailVerified: false,
-            phoneVerified: false,
-            idVerified: false,
-          },
-        },
-      },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-      },
-    })
+      })
+      .select('id, email, firstName, lastName, role')
+      .single()
+
+    if (userError || !user) {
+      console.error('User creation error:', userError)
+      return NextResponse.json(
+        { error: 'Registration failed' },
+        { status: 500 }
+      )
+    }
+
+    // Create wallet and trust score in parallel; clean up the user if either fails
+    const [walletResult, trustResult] = await Promise.all([
+      supabase.from('Wallet').insert({
+        userId: user.id,
+        availableBalance: 0,
+        escrowLockedBalance: 0,
+        pendingBalance: 0,
+        currency: 'NGN',
+      }),
+      supabase.from('TrustScore').insert({
+        userId: user.id,
+        score: 0,
+        totalTransactions: 0,
+        completedTransactions: 0,
+        disputeCount: 0,
+        cancelledCount: 0,
+        emailVerified: false,
+        phoneVerified: false,
+        idVerified: false,
+      }),
+    ])
+
+    if (walletResult.error || trustResult.error) {
+      console.error('Setup error — cleaning up user:', walletResult.error ?? trustResult.error)
+      await supabase.from('User').delete().eq('id', user.id)
+      return NextResponse.json(
+        { error: 'Registration failed' },
+        { status: 500 }
+      )
+    }
 
     await setAuthCookies({
       userId: user.id,
@@ -80,9 +98,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: {
-        user,
-      },
+      data: { user },
     })
   } catch (error: any) {
     console.error('Registration error:', error)

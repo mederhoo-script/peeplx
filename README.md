@@ -46,8 +46,7 @@
 | **Styling** | Tailwind CSS 3.4, GSAP animations |
 | **UI Components** | shadcn/ui (50+ Radix UI components) |
 | **Forms & Validation** | React Hook Form, Zod |
-| **Database** | PostgreSQL via Supabase |
-| **ORM** | Prisma 6 |
+| **Database** | PostgreSQL via Supabase (`@supabase/supabase-js`) |
 | **Auth** | JWT tokens (`jose` for Edge Runtime, `jsonwebtoken` for Node.js), password hashing (`bcryptjs`) |
 | **Payments** | Monnify API |
 | **Deploy** | Vercel |
@@ -82,12 +81,10 @@ peeplx/
 │   ├── lib/
 │   │   ├── auth.ts              # JWT helpers
 │   │   ├── monnify.ts           # Monnify API client
-│   │   ├── prisma.ts            # Prisma client singleton
+│   │   ├── supabase.ts          # Supabase JS client (browser + server)
 │   │   └── utils.ts             # Tailwind class utilities (cn)
 │   ├── sections/                # Landing page sections (Hero, HowItWorks, …)
 │   └── types/                   # Shared TypeScript types
-├── prisma/
-│   └── schema.prisma            # Database schema (User, Wallet, EscrowTransaction, …)
 ├── public/                      # Static assets
 ├── middleware.ts                # Auth middleware (protects dashboard & API routes)
 ├── next.config.ts               # Next.js configuration
@@ -124,13 +121,10 @@ Edit `.env` and fill in your values (see [Environment Variables](#-environment-v
 
 ### 3. Set Up Database
 
-```bash
-# Push Prisma schema to your Supabase PostgreSQL database
-npx prisma db push
+Create the required tables in your Supabase project. You can run the SQL migration from the [Supabase SQL editor](https://supabase.com/dashboard/project/_/sql) or use the Supabase CLI (`supabase db push`).
 
-# (Optional) Open Prisma Studio to browse data
-npm run prisma:studio
-```
+Tables required: `User`, `Wallet`, `EscrowTransaction`, `Payment`, `TrustScore`, `Notification`.
+
 
 ### 4. Start Development Server
 
@@ -146,13 +140,9 @@ npm run dev
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start development server (Turbopack) |
-| `npm run build` | Generate Prisma client + production build |
+| `npm run build` | Production build |
 | `npm run start` | Start production server |
 | `npm run lint` | Run ESLint |
-| `npm run prisma:generate` | Regenerate Prisma client |
-| `npm run prisma:migrate` | Run Prisma migrations |
-| `npm run prisma:push` | Push schema changes to database |
-| `npm run prisma:studio` | Open Prisma Studio |
 
 ---
 
@@ -192,11 +182,10 @@ npm run dev
 Copy `.env.example` to `.env` and configure:
 
 ```env
-# Supabase / PostgreSQL
-# Pooled connection (used at runtime by Prisma Client)
-DATABASE_URL="postgresql://postgres.[ref]:[pass]@aws-0-[region].pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1"
-# Direct connection (used only by Prisma CLI)
-DIRECT_URL="postgresql://postgres.[ref]:[pass]@aws-0-[region].pooler.supabase.com:5432/postgres"
+# Supabase JS client (used by @supabase/supabase-js in both browser and server code)
+NEXT_PUBLIC_SUPABASE_URL="https://<project-ref>.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="<your-anon-public-key>"
+SUPABASE_SERVICE_ROLE_KEY="<your-service-role-key>"   # server-side only
 
 # JWT Authentication
 JWT_SECRET="your-long-random-secret-min-32-chars"
@@ -215,7 +204,7 @@ MONNIFY_WEBHOOK_SECRET="your-monnify-webhook-hash-secret"
 ```
 
 **Where to get these:**
-- **Supabase**: Dashboard → Settings → Database → Connection string
+- **Supabase URL & keys**: Dashboard → Settings → API
 - **Monnify**: [Monnify Dashboard](https://app.monnify.com) → API Keys
 - **JWT secrets**: `openssl rand -base64 64`
 
@@ -223,7 +212,7 @@ MONNIFY_WEBHOOK_SECRET="your-monnify-webhook-hash-secret"
 
 ## 🗄️ Database Schema
 
-The Prisma schema (`prisma/schema.prisma`) defines these models:
+The Supabase database (PostgreSQL) uses these tables:
 
 | Model | Description |
 |-------|-------------|
@@ -257,8 +246,9 @@ The project is configured for one-click deployment on **Vercel**.
 
 | Variable | Description | Where to get it |
 |----------|-------------|-----------------|
-| `DATABASE_URL` | Supabase pooled connection string (port 6543, `?pgbouncer=true&connection_limit=1`) | Supabase → Settings → Database → Connection string → Transaction mode |
-| `DIRECT_URL` | Supabase direct connection string (port 5432) | Supabase → Settings → Database → Connection string → Session mode |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Supabase → Settings → API |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public key | Supabase → Settings → API |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service-role key (server-side only) | Supabase → Settings → API |
 | `JWT_SECRET` | HS256 secret for access tokens (min 32 chars) | `openssl rand -base64 64` |
 | `JWT_REFRESH_SECRET` | HS256 secret for refresh tokens (min 32 chars) | `openssl rand -base64 64` |
 | `NEXT_PUBLIC_APP_URL` | Your Vercel deployment URL (e.g. `https://peeplx.vercel.app`) | Vercel project URL |

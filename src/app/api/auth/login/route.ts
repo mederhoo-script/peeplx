@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { prisma } from '@/lib/prisma'
+import { createServerClient } from '@/lib/supabase'
 import { setAuthCookies } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
@@ -15,22 +15,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        email: true,
-        passwordHash: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        status: true,
-        loginAttempts: true,
-        lockedUntil: true,
-      },
-    })
+    const supabase = createServerClient()
 
-    if (!user) {
+    const { data: user, error } = await supabase
+      .from('User')
+      .select('id, email, passwordHash, firstName, lastName, role, status, loginAttempts, lockedUntil')
+      .eq('email', email)
+      .single()
+
+    if (error || !user) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
@@ -55,16 +48,13 @@ export async function POST(request: NextRequest) {
 
     if (!passwordValid) {
       const newAttempts = user.loginAttempts + 1
-      const updates: any = { loginAttempts: newAttempts }
+      const failUpdates: { loginAttempts: number; lockedUntil?: string } = { loginAttempts: newAttempts }
 
       if (newAttempts >= 5) {
-        updates.lockedUntil = new Date(Date.now() + 15 * 60 * 1000)
+        failUpdates.lockedUntil = new Date(Date.now() + 15 * 60 * 1000).toISOString()
       }
 
-      await prisma.user.update({
-        where: { id: user.id },
-        data: updates,
-      })
+      await supabase.from('User').update(failUpdates).eq('id', user.id)
 
       return NextResponse.json(
         { error: 'Invalid email or password' },
@@ -72,14 +62,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        loginAttempts: 0,
-        lockedUntil: null,
-        lastLoginAt: new Date(),
-      },
-    })
+    await supabase.from('User').update({
+      loginAttempts: 0,
+      lockedUntil: null,
+      lastLoginAt: new Date().toISOString(),
+    }).eq('id', user.id)
 
     await setAuthCookies({
       userId: user.id,

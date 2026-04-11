@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { createServerClient } from '@/lib/supabase'
+
+interface UserShape {
+  id: string
+  email: string
+  firstName: string
+  lastName: string
+  username?: string | null
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,58 +21,55 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
-    const skip = (page - 1) * limit
+    const from = (page - 1) * limit
+    const to = from + limit - 1
 
-    const [escrows, total] = await Promise.all([
-      prisma.escrowTransaction.findMany({
-        where: {
-          OR: [
-            { buyerId: tokenPayload.userId },
-            { sellerId: tokenPayload.userId },
-          ],
-        },
-        include: {
-          buyer: {
-            select: {
-              id: true,
-              email: true,
-              firstName: true,
-              lastName: true,
-              username: true,
-            },
-          },
-          seller: {
-            select: {
-              id: true,
-              email: true,
-              firstName: true,
-              lastName: true,
-              username: true,
-            },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-      }),
-      prisma.escrowTransaction.count({
-        where: {
-          OR: [
-            { buyerId: tokenPayload.userId },
-            { sellerId: tokenPayload.userId },
-          ],
-        },
-      }),
+    const supabase = createServerClient()
+    const userId = tokenPayload.userId
+
+    // userId is a CUID from a verified JWT — safe to use in the or() filter
+    const filter = `buyerId.eq.${userId},sellerId.eq.${userId}`
+
+    const [{ data: escrows }, { count }] = await Promise.all([
+      supabase
+        .from('EscrowTransaction')
+        .select('*')
+        .or(filter)
+        .order('createdAt', { ascending: false })
+        .range(from, to),
+      supabase
+        .from('EscrowTransaction')
+        .select('*', { count: 'exact', head: true })
+        .or(filter),
     ])
+
+    // Enrich with buyer/seller user data
+    const userIds = [...new Set((escrows || []).flatMap((e) => [e.buyerId, e.sellerId]))]
+    let userMap: Record<string, UserShape> = {}
+
+    if (userIds.length > 0) {
+      const { data: users } = await supabase
+        .from('User')
+        .select('id, email, firstName, lastName, username')
+        .in('id', userIds)
+
+      userMap = Object.fromEntries((users || []).map((u: UserShape) => [u.id, u]))
+    }
+
+    const enriched = (escrows || []).map((e) => ({
+      ...e,
+      buyer: userMap[e.buyerId],
+      seller: userMap[e.sellerId],
+    }))
 
     return NextResponse.json({
       success: true,
-      data: escrows,
+      data: enriched,
       pagination: {
         page,
         limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+        total: count ?? 0,
+        totalPages: Math.ceil((count ?? 0) / limit),
       },
     })
   } catch (error) {
@@ -88,14 +93,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields: title, amount, transactionType' }, { status: 400 })
     }
 
-    // Resolve seller: either by email or direct ID
+    const supabase = createServerClient()
     let sellerId: string | null = sellerIdDirect || null
 
     if (!sellerId && sellerEmail) {
-      const sellerUser = await prisma.user.findUnique({
-        where: { email: sellerEmail },
-        select: { id: true },
-      })
+      const { data: sellerUser } = await supabase
+        .from('User')
+        .select('id')
+        .eq('email', sellerEmail)
+        .maybeSingle()
+
       if (!sellerUser) {
         return NextResponse.json(
           { error: `No user found with email: ${sellerEmail}. They must register on PeeplX first.` },
@@ -112,8 +119,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Seller email or ID is required' }, { status: 400 })
     }
 
-    const escrow = await prisma.escrowTransaction.create({
-      data: {
+    const { data: escrow, error: escrowError } = await supabase
+      .from('EscrowTransaction')
+      .insert({
         title,
         description: description || null,
         buyerId: tokenPayload.userId,
@@ -124,30 +132,31 @@ export async function POST(request: NextRequest) {
         deliveryDays: deliveryDays ? Number(deliveryDays) : null,
         terms: terms || null,
         status: 'PENDING',
-      },
-      include: {
-        buyer: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-        seller: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
-    })
+      })
+      .select('*')
+      .single()
+
+    if (escrowError || !escrow) {
+      console.error('Create escrow error:', escrowError)
+      return NextResponse.json({ error: 'Failed to create escrow' }, { status: 500 })
+    }
+
+    const { data: users } = await supabase
+      .from('User')
+      .select('id, email, firstName, lastName')
+      .in('id', [tokenPayload.userId, sellerId])
+
+    const userMap: Record<string, UserShape> = Object.fromEntries(
+      (users || []).map((u: UserShape) => [u.id, u])
+    )
 
     return NextResponse.json({
       success: true,
-      data: escrow,
+      data: {
+        ...escrow,
+        buyer: userMap[escrow.buyerId],
+        seller: userMap[escrow.sellerId],
+      },
     })
   } catch (error) {
     console.error('Create escrow error:', error)

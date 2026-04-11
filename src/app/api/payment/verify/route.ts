@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { monnifyClient } from '@/lib/monnify'
-import { prisma } from '@/lib/prisma'
+import { createServerClient } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,12 +18,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Payment reference is required' }, { status: 400 })
     }
 
-    const payment = await prisma.payment.findUnique({
-      where: { reference },
-      include: {
-        escrow: true,
-      },
-    })
+    const supabase = createServerClient()
+
+    const { data: payment } = await supabase
+      .from('Payment')
+      .select('*, escrow:escrowId(*)')
+      .eq('reference', reference)
+      .single()
 
     if (!payment) {
       return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
@@ -51,60 +52,51 @@ export async function POST(request: NextRequest) {
     const monnifyPayment = monnifyResponse.responseBody
 
     if (monnifyPayment.paymentStatus === 'PAID') {
-      await prisma.$transaction(async (tx) => {
-        // Update payment
-        await tx.payment.update({
-          where: { id: payment.id },
-          data: {
-            status: 'COMPLETED',
-            paidAt: new Date(monnifyPayment.paidOn),
-            channel: monnifyPayment.paymentMethod as any,
-          },
+      // Run updates sequentially; ideally these would be in a PostgreSQL function for atomicity
+      await supabase
+        .from('Payment')
+        .update({
+          status: 'COMPLETED',
+          paidAt: new Date(monnifyPayment.paidOn).toISOString(),
+          channel: monnifyPayment.paymentMethod,
         })
+        .eq('id', payment.id)
 
-        // Update escrow
-        await tx.escrowTransaction.update({
-          where: { id: payment.escrowId },
-          data: {
-            status: 'FUNDED',
-            fundedAt: new Date(),
-          },
+      await supabase
+        .from('EscrowTransaction')
+        .update({
+          status: 'FUNDED',
+          fundedAt: new Date().toISOString(),
         })
+        .eq('id', payment.escrowId)
 
-        // Update buyer wallet
-        const buyerWallet = await tx.wallet.findUnique({
-          where: { userId: payment.userId },
-        })
+      const { data: buyerWallet } = await supabase
+        .from('Wallet')
+        .select('id, escrowLockedBalance')
+        .eq('userId', payment.userId)
+        .maybeSingle()
 
-        if (buyerWallet) {
-          await tx.wallet.update({
-            where: { userId: payment.userId },
-            data: {
-              escrowLockedBalance: {
-                increment: payment.amount,
-              },
-            },
+      if (buyerWallet) {
+        await supabase
+          .from('Wallet')
+          .update({
+            escrowLockedBalance: Number(buyerWallet.escrowLockedBalance) + Number(payment.amount),
           })
-        }
-      })
+          .eq('userId', payment.userId)
+      }
 
       return NextResponse.json({
         success: true,
         data: {
-          payment: {
-            ...payment,
-            status: 'COMPLETED',
-          },
+          payment: { ...payment, status: 'COMPLETED' },
           message: 'Payment verified successfully',
         },
       })
     } else {
-      await prisma.payment.update({
-        where: { id: payment.id },
-        data: {
-          status: 'FAILED',
-        },
-      })
+      await supabase
+        .from('Payment')
+        .update({ status: 'FAILED' })
+        .eq('id', payment.id)
 
       return NextResponse.json({
         success: false,

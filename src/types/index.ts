@@ -1,4 +1,11 @@
-import { UserRole, UserStatus, IdVerificationStatus, EscrowStatus, TransactionType, PaymentStatus, PaymentChannel } from '@prisma/client'
+// Enum string literal unions — previously imported from @prisma/client
+export type UserRole = 'USER' | 'ADMIN'
+export type UserStatus = 'ACTIVE' | 'SUSPENDED' | 'BANNED'
+export type IdVerificationStatus = 'UNVERIFIED' | 'PENDING' | 'VERIFIED' | 'REJECTED'
+export type EscrowStatus = 'PENDING' | 'FUNDED' | 'IN_PROGRESS' | 'COMPLETED' | 'DISPUTED' | 'CANCELLED' | 'REFUNDED'
+export type TransactionType = 'GOODS' | 'SERVICES' | 'DIGITAL' | 'OTHER'
+export type PaymentStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'REFUNDED'
+export type PaymentChannel = 'BANK_TRANSFER' | 'CARD' | 'USSD' | 'WALLET'
 
 export interface User {
   id: string

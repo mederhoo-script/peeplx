@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { monnifyClient } from '@/lib/monnify'
-import { prisma } from '@/lib/prisma'
+import { createServerClient } from '@/lib/supabase'
+import type { PaymentStatus, PaymentChannel } from '@/types'
+
+interface PaymentRecord {
+  id: string
+  escrowId: string
+  userId: string
+  amount: number | string
+  reference: string
+  monnifyReference: string | null
+  status: PaymentStatus
+  channel: PaymentChannel | null
+  paidAt: string | null
+  createdAt: string
+  updatedAt: string
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +33,6 @@ export async function POST(request: NextRequest) {
     }
 
     const webhook = JSON.parse(body)
-
     const { eventType, eventData } = webhook
 
     if (eventType === 'SUCCESSFUL_TRANSACTION') {
@@ -30,17 +44,27 @@ export async function POST(request: NextRequest) {
         paymentMethod,
       } = eventData
 
-      const payment = await prisma.payment.findFirst({
-        where: {
-          OR: [
-            { reference: paymentReference },
-            { monnifyReference: transactionReference },
-          ],
-        },
-        include: {
-          escrow: true,
-        },
-      })
+      const supabase = createServerClient()
+
+      // Look up by paymentReference first, then fall back to transactionReference
+      let payment: PaymentRecord | null = null
+
+      const { data: byRef } = await supabase
+        .from('Payment')
+        .select('*')
+        .eq('reference', paymentReference)
+        .maybeSingle()
+
+      if (byRef) {
+        payment = byRef as PaymentRecord
+      } else {
+        const { data: byMonnify } = await supabase
+          .from('Payment')
+          .select('*')
+          .eq('monnifyReference', transactionReference)
+          .maybeSingle()
+        payment = byMonnify as PaymentRecord | null
+      }
 
       if (!payment) {
         console.error('Payment not found for webhook:', paymentReference)
@@ -51,47 +75,44 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, message: 'Already processed' })
       }
 
-      await prisma.$transaction(async (tx) => {
-        await tx.payment.update({
-          where: { id: payment.id },
-          data: {
-            status: 'COMPLETED',
-            paidAt: new Date(paidOn),
-            channel: paymentMethod as any,
-          },
+      // Sequential updates — for full atomicity these should be a PostgreSQL function
+      await supabase
+        .from('Payment')
+        .update({
+          status: 'COMPLETED',
+          paidAt: new Date(paidOn).toISOString(),
+          channel: paymentMethod,
         })
+        .eq('id', payment.id)
 
-        await tx.escrowTransaction.update({
-          where: { id: payment.escrowId },
-          data: {
-            status: 'FUNDED',
-            fundedAt: new Date(),
-          },
+      await supabase
+        .from('EscrowTransaction')
+        .update({
+          status: 'FUNDED',
+          fundedAt: new Date().toISOString(),
         })
+        .eq('id', payment.escrowId)
 
-        const buyerWallet = await tx.wallet.findUnique({
-          where: { userId: payment.userId },
-        })
+      const { data: buyerWallet } = await supabase
+        .from('Wallet')
+        .select('id, escrowLockedBalance')
+        .eq('userId', payment.userId)
+        .maybeSingle()
 
-        if (buyerWallet) {
-          await tx.wallet.update({
-            where: { userId: payment.userId },
-            data: {
-              escrowLockedBalance: {
-                increment: payment.amount,
-              },
-            },
+      if (buyerWallet) {
+        await supabase
+          .from('Wallet')
+          .update({
+            escrowLockedBalance: Number(buyerWallet.escrowLockedBalance) + Number(payment.amount),
           })
-        }
+          .eq('userId', payment.userId)
+      }
 
-        await tx.notification.create({
-          data: {
-            userId: payment.userId,
-            type: 'PAYMENT_UPDATE',
-            title: 'Payment Successful',
-            message: `Your payment of ₦${Number(amountPaid).toLocaleString('en-NG')} has been confirmed and the escrow is now funded.`,
-          },
-        })
+      await supabase.from('Notification').insert({
+        userId: payment.userId,
+        type: 'PAYMENT_UPDATE',
+        title: 'Payment Successful',
+        message: `Your payment of ₦${Number(amountPaid).toLocaleString('en-NG')} has been confirmed and the escrow is now funded.`,
       })
     }
 

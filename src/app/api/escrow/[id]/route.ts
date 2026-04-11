@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { createServerClient } from '@/lib/supabase'
+import type { EscrowStatus } from '@/types'
+
+interface EscrowUpdatePayload {
+  status?: EscrowStatus
+  terms?: string
+  completedAt?: string
+  disputedAt?: string
+  cancelledAt?: string
+}
 
 export async function GET(
   request: NextRequest,
@@ -14,34 +23,13 @@ export async function GET(
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const escrow = await prisma.escrowTransaction.findUnique({
-      where: { id },
-      include: {
-        buyer: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            username: true,
-            trustScore: true,
-          },
-        },
-        seller: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            username: true,
-            trustScore: true,
-          },
-        },
-        payments: {
-          orderBy: { createdAt: 'desc' },
-        },
-      },
-    })
+    const supabase = createServerClient()
+
+    const { data: escrow } = await supabase
+      .from('EscrowTransaction')
+      .select('*')
+      .eq('id', id)
+      .single()
 
     if (!escrow) {
       return NextResponse.json({ error: 'Escrow not found' }, { status: 404 })
@@ -51,9 +39,29 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
+    // Fetch buyer, seller, and payments in parallel
+    const [{ data: users }, { data: payments }] = await Promise.all([
+      supabase
+        .from('User')
+        .select('id, email, firstName, lastName, username, trustScore')
+        .in('id', [escrow.buyerId, escrow.sellerId]),
+      supabase
+        .from('Payment')
+        .select('*')
+        .eq('escrowId', id)
+        .order('createdAt', { ascending: false }),
+    ])
+
+    const userMap = Object.fromEntries((users || []).map((u) => [u.id, u]))
+
     return NextResponse.json({
       success: true,
-      data: escrow,
+      data: {
+        ...escrow,
+        buyer: userMap[escrow.buyerId],
+        seller: userMap[escrow.sellerId],
+        payments: payments || [],
+      },
     })
   } catch (error) {
     console.error('Get escrow error:', error)
@@ -73,12 +81,13 @@ export async function PATCH(
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const body = await request.json()
-    const { status, terms, action } = body
+    const supabase = createServerClient()
 
-    const escrow = await prisma.escrowTransaction.findUnique({
-      where: { id },
-    })
+    const { data: escrow } = await supabase
+      .from('EscrowTransaction')
+      .select('id, buyerId, sellerId')
+      .eq('id', id)
+      .single()
 
     if (!escrow) {
       return NextResponse.json({ error: 'Escrow not found' }, { status: 404 })
@@ -88,64 +97,55 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    const updateData: any = {}
+    const body = await request.json()
+    const { status, terms, action } = body
+    const updateData: EscrowUpdatePayload = {}
 
-    // Handle action-based updates
     if (action) {
       if (action === 'confirm_delivery') {
         updateData.status = 'COMPLETED'
-        updateData.completedAt = new Date()
+        updateData.completedAt = new Date().toISOString()
       } else if (action === 'dispute') {
         updateData.status = 'DISPUTED'
-        updateData.disputedAt = new Date()
+        updateData.disputedAt = new Date().toISOString()
       } else if (action === 'cancel') {
         updateData.status = 'CANCELLED'
-        updateData.cancelledAt = new Date()
+        updateData.cancelledAt = new Date().toISOString()
       }
     }
 
     if (status) {
-      updateData.status = status
-
-      if (status === 'COMPLETED') {
-        updateData.completedAt = new Date()
-      } else if (status === 'DISPUTED') {
-        updateData.disputedAt = new Date()
-      } else if (status === 'CANCELLED') {
-        updateData.cancelledAt = new Date()
-      }
+      updateData.status = status as EscrowStatus
+      if (status === 'COMPLETED') updateData.completedAt = new Date().toISOString()
+      else if (status === 'DISPUTED') updateData.disputedAt = new Date().toISOString()
+      else if (status === 'CANCELLED') updateData.cancelledAt = new Date().toISOString()
     }
 
     if (terms !== undefined) {
       updateData.terms = terms
     }
 
-    const updatedEscrow = await prisma.escrowTransaction.update({
-      where: { id },
-      data: updateData,
-      include: {
-        buyer: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-        seller: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
-    })
+    const { data: updatedEscrow } = await supabase
+      .from('EscrowTransaction')
+      .update(updateData)
+      .eq('id', id)
+      .select('*')
+      .single()
+
+    const { data: users } = await supabase
+      .from('User')
+      .select('id, email, firstName, lastName')
+      .in('id', [escrow.buyerId, escrow.sellerId])
+
+    const userMap = Object.fromEntries((users || []).map((u) => [u.id, u]))
 
     return NextResponse.json({
       success: true,
-      data: updatedEscrow,
+      data: {
+        ...updatedEscrow,
+        buyer: userMap[escrow.buyerId],
+        seller: userMap[escrow.sellerId],
+      },
     })
   } catch (error) {
     console.error('Update escrow error:', error)

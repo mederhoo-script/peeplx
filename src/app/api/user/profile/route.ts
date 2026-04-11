@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { createServerClient } from '@/lib/supabase'
+
+interface ProfileUpdatePayload {
+  firstName?: string
+  lastName?: string
+  username?: string
+  phone?: string | null
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,26 +17,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: tokenPayload.userId },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        username: true,
-        phone: true,
-        role: true,
-        status: true,
-        isEmailVerified: true,
-        idVerificationStatus: true,
-        trustScore: true,
-        createdAt: true,
-        updatedAt: true,
-        wallet: true,
-        trustScoreData: true,
-      },
-    })
+    const supabase = createServerClient()
+
+    const [{ data: user }, { data: wallet }, { data: trustScoreData }] = await Promise.all([
+      supabase
+        .from('User')
+        .select('id, email, firstName, lastName, username, phone, role, status, isEmailVerified, idVerificationStatus, trustScore, createdAt, updatedAt')
+        .eq('id', tokenPayload.userId)
+        .single(),
+      supabase
+        .from('Wallet')
+        .select('*')
+        .eq('userId', tokenPayload.userId)
+        .maybeSingle(),
+      supabase
+        .from('TrustScore')
+        .select('*')
+        .eq('userId', tokenPayload.userId)
+        .maybeSingle(),
+    ])
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
@@ -37,7 +43,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: { user },
+      data: { user: { ...user, wallet, trustScoreData } },
     })
   } catch (error) {
     console.error('Get profile error:', error)
@@ -55,32 +61,31 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json()
     const { firstName, lastName, username, phone } = body
-
-    const updateData: any = {}
+    const updateData: ProfileUpdatePayload = {}
 
     if (firstName) updateData.firstName = firstName
     if (lastName) updateData.lastName = lastName
     if (username) updateData.username = username
     if (phone !== undefined) updateData.phone = phone || null
 
-    const user = await prisma.user.update({
-      where: { id: tokenPayload.userId },
-      data: updateData,
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        username: true,
-        phone: true,
-        role: true,
-        status: true,
-        isEmailVerified: true,
-        idVerificationStatus: true,
-        trustScore: true,
-        updatedAt: true,
-      },
-    })
+    const supabase = createServerClient()
+
+    const { data: user, error } = await supabase
+      .from('User')
+      .update(updateData)
+      .eq('id', tokenPayload.userId)
+      .select('id, email, firstName, lastName, username, phone, role, status, isEmailVerified, idVerificationStatus, trustScore, updatedAt')
+      .single()
+
+    if (error) {
+      if (error.code === '23505') {
+        return NextResponse.json(
+          { error: 'Username or phone already taken' },
+          { status: 409 }
+        )
+      }
+      throw error
+    }
 
     return NextResponse.json({
       success: true,
@@ -88,14 +93,6 @@ export async function PATCH(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Update profile error:', error)
-    
-    if (error.code === 'P2002') {
-      return NextResponse.json(
-        { error: 'Username or phone already taken' },
-        { status: 409 }
-      )
-    }
-
     return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 })
   }
 }

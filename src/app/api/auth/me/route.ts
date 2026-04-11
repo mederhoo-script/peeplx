@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { createServerClient } from '@/lib/supabase'
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,40 +13,25 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: tokenPayload.userId },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        username: true,
-        phone: true,
-        role: true,
-        status: true,
-        isEmailVerified: true,
-        idVerificationStatus: true,
-        trustScore: true,
-        createdAt: true,
-        wallet: {
-          select: {
-            id: true,
-            availableBalance: true,
-            escrowLockedBalance: true,
-            pendingBalance: true,
-            currency: true,
-          },
-        },
-        trustScoreData: {
-          select: {
-            score: true,
-            totalTransactions: true,
-            completedTransactions: true,
-            disputeCount: true,
-          },
-        },
-      },
-    })
+    const supabase = createServerClient()
+
+    const [{ data: user }, { data: wallet }, { data: trustScoreData }] = await Promise.all([
+      supabase
+        .from('User')
+        .select('id, email, firstName, lastName, username, phone, role, status, isEmailVerified, idVerificationStatus, trustScore, createdAt')
+        .eq('id', tokenPayload.userId)
+        .single(),
+      supabase
+        .from('Wallet')
+        .select('id, availableBalance, escrowLockedBalance, pendingBalance, currency')
+        .eq('userId', tokenPayload.userId)
+        .maybeSingle(),
+      supabase
+        .from('TrustScore')
+        .select('score, totalTransactions, completedTransactions, disputeCount')
+        .eq('userId', tokenPayload.userId)
+        .maybeSingle(),
+    ])
 
     if (!user) {
       return NextResponse.json(
@@ -57,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: user,
+      data: { ...user, wallet, trustScoreData },
     })
   } catch (error) {
     return NextResponse.json(

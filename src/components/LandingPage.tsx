@@ -6,6 +6,7 @@ import {
   ArrowRight, Check, ChevronDown, ChevronUp, Menu, X,
   Shield, Zap, Clock, Users, Lock, Star, TrendingUp,
 } from 'lucide-react'
+import ThemeToggle from '@/components/ThemeToggle'
 
 const stats = [
   { value: '₦2.4B+', label: 'Secured in escrow' },
@@ -19,37 +20,37 @@ const features = [
     icon: Shield,
     title: 'Funds Protected',
     desc: 'Money stays locked until both parties are satisfied. Zero risk of disappearing sellers.',
-    color: 'bg-blue-50 text-blue-600',
+    color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400',
   },
   {
     icon: Zap,
     title: 'Instant Setup',
     desc: 'Create an escrow deal in under 2 minutes. No paperwork, no branches, no waiting.',
-    color: 'bg-orange-50 text-orange-600',
+    color: 'bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400',
   },
   {
     icon: Lock,
     title: 'Bank-Level Security',
     desc: 'End-to-end encryption. All funds held with licensed financial partners in Nigeria.',
-    color: 'bg-green-50 text-green-600',
+    color: 'bg-green-50 dark:bg-green-950/50 text-green-600 dark:text-green-400',
   },
   {
     icon: Users,
     title: 'Built for Nigeria',
     desc: "Naira-native, supports all major banks and mobile money. Designed for Nigerians.",
-    color: 'bg-purple-50 text-purple-600',
+    color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400',
   },
   {
     icon: TrendingUp,
     title: 'Smart Trust Score',
     desc: "Every user builds a reputation. Know who you're dealing with before you send a kobo.",
-    color: 'bg-teal-50 text-teal-600',
+    color: 'bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400',
   },
   {
     icon: Clock,
     title: 'Fast Disputes',
     desc: 'If something goes wrong, our team resolves disputes within 48 hours. Always.',
-    color: 'bg-red-50 text-red-600',
+    color: 'bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400',
   },
 ]
 
@@ -135,12 +136,14 @@ export default function LandingPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-gray-950">
 
       {/* ── NAVBAR ── */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled ? 'bg-white/95 backdrop-blur border-b border-gray-100 shadow-sm' : 'bg-transparent'
+          scrolled
+            ? 'bg-white/95 dark:bg-gray-950/95 backdrop-blur border-b border-gray-100 dark:border-gray-800 shadow-sm'
+            : 'bg-transparent'
         }`}
       >
         <div className="max-w-7xl mx-auto px-5 lg:px-8 h-[68px] flex items-center justify-between">
@@ -148,60 +151,64 @@ export default function LandingPage() {
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center">
               <Shield className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-xl text-gray-900 tracking-tight">PeeplX</span>
+            <span className="font-bold text-xl text-gray-900 dark:text-white tracking-tight">PeeplX</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-7 text-sm text-gray-600">
-            <a href="#how-it-works" className="hover:text-gray-900 transition-colors">How it works</a>
-            <a href="#features" className="hover:text-gray-900 transition-colors">Features</a>
-            <a href="#testimonials" className="hover:text-gray-900 transition-colors">Reviews</a>
-            <a href="#faq" className="hover:text-gray-900 transition-colors">FAQ</a>
+          <nav className="hidden md:flex items-center gap-7 text-sm text-gray-600 dark:text-gray-300">
+            <a href="#how-it-works" className="hover:text-gray-900 dark:hover:text-white transition-colors">How it works</a>
+            <a href="#features" className="hover:text-gray-900 dark:hover:text-white transition-colors">Features</a>
+            <a href="#testimonials" className="hover:text-gray-900 dark:hover:text-white transition-colors">Reviews</a>
+            <a href="#faq" className="hover:text-gray-900 dark:hover:text-white transition-colors">FAQ</a>
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
+            <ThemeToggle />
             <Link
               href="/auth/login"
-              className="text-sm text-gray-600 hover:text-gray-900 transition-colors px-4 py-2"
+              className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors px-4 py-2"
             >
               Log in
             </Link>
             <Link
               href="/auth/register"
-              className="text-sm bg-gray-900 text-white px-5 py-2.5 rounded-full font-medium hover:bg-gray-800 transition-colors"
+              className="text-sm bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-5 py-2.5 rounded-full font-medium hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
             >
               Get started
             </Link>
           </div>
 
-          <button className="md:hidden p-2 text-gray-700" onClick={() => setMenuOpen(!menuOpen)}>
-            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+          <div className="md:hidden flex items-center gap-2">
+            <ThemeToggle />
+            <button className="p-2 text-gray-700 dark:text-gray-200" onClick={() => setMenuOpen(!menuOpen)}>
+              {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
 
         {menuOpen && (
-          <div className="md:hidden bg-white border-t border-gray-100 px-5 py-6 flex flex-col gap-5">
-            <a href="#how-it-works" className="text-base text-gray-700" onClick={() => setMenuOpen(false)}>
+          <div className="md:hidden bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 px-5 py-6 flex flex-col gap-5">
+            <a href="#how-it-works" className="text-base text-gray-700 dark:text-gray-300" onClick={() => setMenuOpen(false)}>
               How it works
             </a>
-            <a href="#features" className="text-base text-gray-700" onClick={() => setMenuOpen(false)}>
+            <a href="#features" className="text-base text-gray-700 dark:text-gray-300" onClick={() => setMenuOpen(false)}>
               Features
             </a>
-            <a href="#testimonials" className="text-base text-gray-700" onClick={() => setMenuOpen(false)}>
+            <a href="#testimonials" className="text-base text-gray-700 dark:text-gray-300" onClick={() => setMenuOpen(false)}>
               Reviews
             </a>
-            <a href="#faq" className="text-base text-gray-700" onClick={() => setMenuOpen(false)}>
+            <a href="#faq" className="text-base text-gray-700 dark:text-gray-300" onClick={() => setMenuOpen(false)}>
               FAQ
             </a>
             <div className="flex gap-3 pt-2">
               <Link
                 href="/auth/login"
-                className="flex-1 text-center py-2.5 border border-gray-200 rounded-full text-sm text-gray-700"
+                className="flex-1 text-center py-2.5 border border-gray-200 dark:border-gray-700 rounded-full text-sm text-gray-700 dark:text-gray-300"
               >
                 Log in
               </Link>
               <Link
                 href="/auth/register"
-                className="flex-1 text-center py-2.5 bg-gray-900 text-white rounded-full text-sm font-medium"
+                className="flex-1 text-center py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full text-sm font-medium"
               >
                 Get started
               </Link>
@@ -225,12 +232,12 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Copy */}
             <div>
-              <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 text-xs font-semibold px-3.5 py-1.5 rounded-full mb-6 border border-indigo-100">
+              <div className="inline-flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-xs font-semibold px-3.5 py-1.5 rounded-full mb-6 border border-indigo-100 dark:border-indigo-800">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                 Live in Nigeria · Trusted by 50,000+ users
               </div>
 
-              <h1 className="text-5xl lg:text-6xl xl:text-7xl font-extrabold text-gray-900 leading-[1.05] tracking-tight">
+              <h1 className="text-5xl lg:text-6xl xl:text-7xl font-extrabold text-gray-900 dark:text-white leading-[1.05] tracking-tight">
                 Buy & sell with
                 <br />
                 <span
@@ -241,7 +248,7 @@ export default function LandingPage() {
                 </span>
               </h1>
 
-              <p className="mt-6 text-lg lg:text-xl text-gray-500 max-w-lg leading-relaxed">
+              <p className="mt-6 text-lg lg:text-xl text-gray-500 dark:text-gray-400 max-w-lg leading-relaxed">
                 PeeplX is Nigeria's secure escrow platform. We hold the money until both sides are
                 happy — so you never get scammed, ever.
               </p>
@@ -257,13 +264,13 @@ export default function LandingPage() {
                 </Link>
                 <a
                   href="#how-it-works"
-                  className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium px-7 py-3.5 rounded-full transition-colors"
+                  className="inline-flex items-center gap-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-medium px-7 py-3.5 rounded-full transition-colors"
                 >
                   See how it works
                 </a>
               </div>
 
-              <div className="mt-8 flex flex-wrap items-center gap-5 text-sm text-gray-500">
+              <div className="mt-8 flex flex-wrap items-center gap-5 text-sm text-gray-500 dark:text-gray-400">
                 {['No monthly fees', 'Works across Nigeria', 'Fast dispute resolution'].map((t) => (
                   <span key={t} className="flex items-center gap-1.5">
                     <Check className="w-4 h-4 text-green-500" />
@@ -276,40 +283,40 @@ export default function LandingPage() {
             {/* UI Mockup */}
             <div className="relative flex justify-center lg:justify-end">
               <div className="relative w-full max-w-sm">
-                <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 p-6" style={{ boxShadow: '0 32px 80px rgba(79,70,229,0.12)' }}>
+                <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700 p-6" style={{ boxShadow: '0 32px 80px rgba(79,70,229,0.12)' }}>
                   <div className="flex items-center justify-between mb-5">
                     <div>
-                      <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Escrow Deal</p>
-                      <p className="text-base font-bold text-gray-900 mt-0.5">iPhone 15 Pro Max</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wider">Escrow Deal</p>
+                      <p className="text-base font-bold text-gray-900 dark:text-white mt-0.5">iPhone 15 Pro Max</p>
                     </div>
-                    <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-green-100">
+                    <span className="inline-flex items-center gap-1.5 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold px-3 py-1.5 rounded-full border border-green-100 dark:border-green-800">
                       <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                       Secured
                     </span>
                   </div>
 
-                  <div className="bg-gray-50 rounded-2xl p-4 mb-4">
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 mb-4">
                     <div className="flex justify-between items-center">
                       <div>
-                        <p className="text-xs text-gray-400">Amount held</p>
-                        <p className="text-2xl font-extrabold text-gray-900 mt-0.5">₦920,000</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">Amount held</p>
+                        <p className="text-2xl font-extrabold text-gray-900 dark:text-white mt-0.5">₦920,000</p>
                       </div>
-                      <Shield className="w-10 h-10 text-indigo-200" />
+                      <Shield className="w-10 h-10 text-indigo-200 dark:text-indigo-700" />
                     </div>
                   </div>
 
                   <div className="space-y-3 mb-5">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500">Buyer</span>
-                      <span className="text-sm font-medium text-gray-800">@chioma_s</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Buyer</span>
+                      <span className="text-sm font-medium text-gray-800 dark:text-gray-200">@chioma_s</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500">Seller</span>
-                      <span className="text-sm font-medium text-gray-800">@tunde_dev</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Seller</span>
+                      <span className="text-sm font-medium text-gray-800 dark:text-gray-200">@tunde_dev</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500">Status</span>
-                      <span className="text-sm font-medium text-indigo-600">Awaiting delivery</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Status</span>
+                      <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">Awaiting delivery</span>
                     </div>
                   </div>
 
@@ -322,24 +329,24 @@ export default function LandingPage() {
                 </div>
 
                 {/* Floating badge 1 */}
-                <div className="absolute -top-4 -left-4 bg-white rounded-2xl shadow-lg border border-gray-100 px-4 py-2.5 flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                    <Check className="w-4 h-4 text-green-600" />
+                <div className="absolute -top-4 -left-4 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 px-4 py-2.5 flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+                    <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-gray-800">Deal completed</p>
-                    <p className="text-xs text-gray-400">₦1.45M released</p>
+                    <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">Deal completed</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">₦1.45M released</p>
                   </div>
                 </div>
 
                 {/* Floating badge 2 */}
-                <div className="absolute -bottom-4 -right-4 bg-white rounded-2xl shadow-lg border border-gray-100 px-4 py-2.5 flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                    <Users className="w-4 h-4 text-indigo-600" />
+                <div className="absolute -bottom-4 -right-4 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 px-4 py-2.5 flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
+                    <Users className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-gray-800">Trust Score</p>
-                    <p className="text-xs text-gray-400">98/100 · Verified</p>
+                    <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">Trust Score</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">98/100 · Verified</p>
                   </div>
                 </div>
               </div>
@@ -363,11 +370,11 @@ export default function LandingPage() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section id="how-it-works" className="py-20 lg:py-28" style={{ background: '#f8fafc' }}>
+      <section id="how-it-works" className="py-20 lg:py-28 bg-slate-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-5 lg:px-8">
           <div className="text-center mb-14">
-            <p className="text-indigo-600 text-sm font-semibold uppercase tracking-widest mb-3">How it works</p>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight">
+            <p className="text-indigo-600 dark:text-indigo-400 text-sm font-semibold uppercase tracking-widest mb-3">How it works</p>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight">
               Four simple steps.
               <br />
               Zero stress.
@@ -376,13 +383,13 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {steps.map((step, i) => (
-              <div key={i} className="relative bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <div className="text-5xl font-extrabold text-gray-100 leading-none mb-4">{step.number}</div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{step.title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{step.desc}</p>
+              <div key={i} className="relative bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
+                <div className="text-5xl font-extrabold text-gray-100 dark:text-gray-700 leading-none mb-4">{step.number}</div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{step.title}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{step.desc}</p>
                 {i < steps.length - 1 && (
                   <div className="hidden lg:flex absolute top-10 -right-3 z-10">
-                    <ArrowRight className="w-6 h-6 text-gray-300" />
+                    <ArrowRight className="w-6 h-6 text-gray-300 dark:text-gray-600" />
                   </div>
                 )}
               </div>
@@ -392,11 +399,11 @@ export default function LandingPage() {
       </section>
 
       {/* ── FEATURES ── */}
-      <section id="features" className="py-20 lg:py-28 bg-white">
+      <section id="features" className="py-20 lg:py-28 bg-white dark:bg-gray-950">
         <div className="max-w-7xl mx-auto px-5 lg:px-8">
           <div className="text-center mb-14">
-            <p className="text-indigo-600 text-sm font-semibold uppercase tracking-widest mb-3">Features</p>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight">
+            <p className="text-indigo-600 dark:text-indigo-400 text-sm font-semibold uppercase tracking-widest mb-3">Features</p>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight">
               Everything you need
               <br />
               to trade safely.
@@ -407,13 +414,13 @@ export default function LandingPage() {
             {features.map(({ icon: Icon, title, desc, color }) => (
               <div
                 key={title}
-                className="group p-6 rounded-2xl border border-gray-100 hover:border-indigo-100 hover:shadow-md transition-all duration-200"
+                className="group p-6 rounded-2xl border border-gray-100 dark:border-gray-800 hover:border-indigo-100 dark:hover:border-indigo-700 hover:shadow-md transition-all duration-200"
               >
                 <div className={`w-11 h-11 rounded-xl ${color} flex items-center justify-center mb-4`}>
                   <Icon className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-bold text-gray-900 mb-1.5">{title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1.5">{title}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{desc}</p>
               </div>
             ))}
           </div>
@@ -421,27 +428,27 @@ export default function LandingPage() {
       </section>
 
       {/* ── TESTIMONIALS ── */}
-      <section id="testimonials" style={{ background: '#f8fafc' }} className="py-20 lg:py-28">
+      <section id="testimonials" className="py-20 lg:py-28 bg-slate-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-5 lg:px-8">
           <div className="text-center mb-14">
-            <p className="text-indigo-600 text-sm font-semibold uppercase tracking-widest mb-3">Reviews</p>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight">
+            <p className="text-indigo-600 dark:text-indigo-400 text-sm font-semibold uppercase tracking-widest mb-3">Reviews</p>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight">
               Nigerians love PeeplX.
             </h2>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
             {testimonials.map(({ quote, name, role, stars }) => (
-              <div key={name} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+              <div key={name} className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
                 <div className="flex gap-1 mb-4">
                   {Array.from({ length: stars }).map((_, i) => (
                     <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
                   ))}
                 </div>
-                <p className="text-gray-700 text-sm leading-relaxed mb-5">&quot;{quote}&quot;</p>
+                <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed mb-5">&quot;{quote}&quot;</p>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">{name}</p>
-                  <p className="text-xs text-gray-400">{role}</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{name}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">{role}</p>
                 </div>
               </div>
             ))}
@@ -450,21 +457,21 @@ export default function LandingPage() {
       </section>
 
       {/* ── FAQ ── */}
-      <section id="faq" className="py-20 lg:py-28 bg-white">
+      <section id="faq" className="py-20 lg:py-28 bg-white dark:bg-gray-950">
         <div className="max-w-3xl mx-auto px-5 lg:px-8">
           <div className="text-center mb-14">
-            <p className="text-indigo-600 text-sm font-semibold uppercase tracking-widest mb-3">FAQ</p>
-            <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">Common questions.</h2>
+            <p className="text-indigo-600 dark:text-indigo-400 text-sm font-semibold uppercase tracking-widest mb-3">FAQ</p>
+            <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">Common questions.</h2>
           </div>
 
           <div className="space-y-3">
             {faqs.map(({ q, a }, i) => (
-              <div key={i} className="border border-gray-100 rounded-2xl overflow-hidden">
+              <div key={i} className="border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden">
                 <button
-                  className="w-full text-left px-6 py-4 flex items-center justify-between bg-white"
+                  className="w-full text-left px-6 py-4 flex items-center justify-between bg-white dark:bg-gray-900"
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                 >
-                  <span className="font-semibold text-gray-900 text-sm lg:text-base pr-4">{q}</span>
+                  <span className="font-semibold text-gray-900 dark:text-white text-sm lg:text-base pr-4">{q}</span>
                   {openFaq === i ? (
                     <ChevronUp className="w-5 h-5 text-gray-400 flex-shrink-0" />
                   ) : (
@@ -472,7 +479,7 @@ export default function LandingPage() {
                   )}
                 </button>
                 {openFaq === i && (
-                  <div className="px-6 pb-5 text-sm text-gray-500 leading-relaxed border-t border-gray-50 pt-4 bg-white">
+                  <div className="px-6 pb-5 text-sm text-gray-500 dark:text-gray-400 leading-relaxed border-t border-gray-50 dark:border-gray-800 pt-4 bg-white dark:bg-gray-900">
                     {a}
                   </div>
                 )}

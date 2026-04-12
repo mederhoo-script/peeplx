@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,48 +6,26 @@
 
 @layer base {
   :root {
-    --background: 220 14% 4%;
-    --foreground: 220 20% 97%;
-    --card: 220 16% 6%;
-    --card-foreground: 220 20% 97%;
-    --popover: 220 16% 6%;
-    --popover-foreground: 220 20% 97%;
-    --primary: 82 100% 59%;
-    --primary-foreground: 220 14% 4%;
-    --secondary: 220 16% 10%;
-    --secondary-foreground: 220 20% 97%;
-    --muted: 220 16% 10%;
-    --muted-foreground: 220 10% 68%;
-    --accent: 82 100% 59%;
-    --accent-foreground: 220 14% 4%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 220 10% 16%;
-    --input: 220 10% 16%;
-    --ring: 82 100% 59%;
-    --radius: 1rem;
-  }
-
-  .light {
     --background: 0 0% 100%;
-    --foreground: 220 13% 13%;
-    --card: 0 0% 96%;
-    --card-foreground: 220 13% 13%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 220 13% 13%;
-    --primary: 82 100% 59%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 239 84% 60%;
     --primary-foreground: 0 0% 100%;
     --secondary: 220 14% 96%;
-    --secondary-foreground: 220 13% 13%;
+    --secondary-foreground: 222 47% 11%;
     --muted: 220 14% 96%;
-    --muted-foreground: 220 10% 40%;
-    --accent: 82 100% 59%;
-    --accent-foreground: 220 14% 4%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 100%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 239 84% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 82 100% 59%;
+    --ring: 239 84% 60%;
+    --radius: 1rem;
   }
 }
 
@@ -55,159 +33,14 @@
   * {
     @apply border-border;
   }
-  
+
   html {
     scroll-behavior: smooth;
   }
-  
+
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', system-ui, sans-serif;
-    transition: background-color 0.3s ease, color 0.3s ease;
-  }
-  
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Space Grotesk', sans-serif;
-    letter-spacing: -0.02em;
-    line-height: 0.95;
-  }
-  
-  .font-mono {
-    font-family: 'IBM Plex Mono', monospace;
-  }
-}
-
-@layer components {
-  .text-gradient {
-    background: linear-gradient(135deg, #F4F6FA 0%, #A6ACB8 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .light .text-gradient {
-    background: linear-gradient(135deg, #1a1a1a 0%, #555555 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  
-  .card-dark {
-    @apply bg-card border border-border rounded-[22px];
-    transition: all 0.3s ease;
-  }
-  
-  .light .card-dark {
-    border-color: rgba(0, 0, 0, 0.08);
-  }
-  
-  .card-glow {
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
-  }
-
-  .light .card-glow {
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.08);
-  }
-  
-  .btn-accent {
-    background: #B6FF2E;
-    color: #07080A;
-    font-weight: 600;
-    padding: 14px 28px;
-    border-radius: 999px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  
-  .btn-accent:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(182, 255, 46, 0.25);
-  }
-  
-  .btn-outline {
-    @apply bg-transparent border rounded-full px-7 py-3.5 font-medium transition-all duration-200;
-    border-color: rgba(244, 246, 250, 0.18);
-    color: #F4F6FA;
-  }
-
-  .light .btn-outline {
-    border-color: rgba(0, 0, 0, 0.18);
-    color: #1a1a1a;
-  }
-  
-  .btn-outline:hover {
-    background: rgba(244, 246, 250, 0.05);
-    border-color: rgba(244, 246, 250, 0.3);
-  }
-
-  .light .btn-outline:hover {
-    background: rgba(0, 0, 0, 0.03);
-    border-color: rgba(0, 0, 0, 0.3);
-  }
-  
-  .eyebrow {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #B6FF2E;
-  }
-  
-  .grain-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    opacity: 0.04;
-    mix-blend-mode: overlay;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-    z-index: 9999;
-  }
-  
-  .section-pinned {
-    height: 100vh;
-    width: 100vw;
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .live-pulse {
-    animation: pulse-accent 2s ease-in-out infinite;
-  }
-  
-  @keyframes pulse-accent {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.6; transform: scale(0.9); }
-  }
-  
-  .marquee {
-    animation: marquee 20s linear infinite;
-  }
-  
-  @keyframes marquee {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
-  }
-  
-  .scan-line {
-    animation: scan 3s ease-in-out infinite;
-  }
-  
-  @keyframes scan {
-    0% { transform: translateY(-100%); }
-    100% { transform: translateY(100%); }
-  }
-  
-  .stroke-draw {
-    stroke-dasharray: 1000;
-    stroke-dashoffset: 1000;
-    animation: draw 1.5s ease-out forwards;
-  }
-  
-  @keyframes draw {
-    to { stroke-dashoffset: 0; }
   }
 }
 
@@ -217,20 +50,20 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #07080A;
+  background: #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1a1d23;
+  background: #cbd5e1;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2a2d33;
+  background: #94a3b8;
 }
 
 /* Selection styling */
 ::selection {
-  background: rgba(182, 255, 46, 0.3);
-  color: #F4F6FA;
+  background: rgba(79, 70, 229, 0.15);
+  color: #1e1b4b;
 }

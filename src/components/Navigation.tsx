@@ -1,120 +1,64 @@
 'use client'
 
+// Navigation is now handled directly inside LandingPage.
+// This file is kept for potential use in other pages.
+
 import { useState, useEffect } from 'react'
-import { Menu, X, Shield } from 'lucide-react'
 import Link from 'next/link'
-import ThemeToggle from './ThemeToggle'
+import { Menu, X, Shield } from 'lucide-react'
 
 export default function Navigation() {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 100);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-      setIsMobileMenuOpen(false);
-    }
-  };
-
-  const navLinks = [
-    { label: 'How it works', id: 'how-it-works' },
-    { label: 'Trust', id: 'trust-profile' },
-    { label: 'Safety', id: 'safety' },
-    { label: 'Verify', id: 'verification' },
-  ];
+    const onScroll = () => setScrolled(window.scrollY > 40)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   return (
-    <>
-      <nav
-        className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-          isScrolled
-            ? 'bg-background/90 dark:bg-peeplx-bg/90 backdrop-blur-md border-b border-border'
-            : 'bg-transparent'
-        }`}
-      >
-        <div className="flex items-center justify-between px-6 lg:px-[4vw] h-[72px]">
-          {/* Logo */}
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="flex items-center gap-2 group"
-          >
-            <div className="w-8 h-8 rounded-lg bg-accent dark:bg-peeplx-accent flex items-center justify-center">
-              <Shield className="w-5 h-5 text-background dark:text-peeplx-bg" />
-            </div>
-            <span className="font-display font-bold text-xl text-foreground dark:text-peeplx-text">
-              PeeplX
-            </span>
-          </button>
-
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <button
-                key={link.id}
-                onClick={() => scrollToSection(link.id)}
-                className="text-sm text-muted-foreground dark:text-peeplx-text-secondary hover:text-foreground dark:hover:text-peeplx-text transition-colors relative group"
-              >
-                {link.label}
-                <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-accent transition-all duration-300 group-hover:w-full" />
-              </button>
-            ))}
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled ? 'bg-white/95 backdrop-blur border-b border-gray-100 shadow-sm' : 'bg-transparent'
+      }`}
+    >
+      <div className="max-w-7xl mx-auto px-5 lg:px-8 h-[68px] flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center">
+            <Shield className="w-4 h-4 text-white" />
           </div>
-
-          {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-4">
-            <ThemeToggle />
-            <Link href="/auth/login" className="text-sm text-muted-foreground dark:text-peeplx-text-secondary hover:text-foreground dark:hover:text-peeplx-text transition-colors">
-              Log in
-            </Link>
-            <Link href="/auth/register" className="btn-accent text-sm py-2.5 px-5">
-              Get started
-            </Link>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden text-foreground dark:text-peeplx-text p-2"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          <span className="font-bold text-xl text-gray-900 tracking-tight">PeeplX</span>
+        </Link>
+        <div className="hidden md:flex items-center gap-3">
+          <Link href="/auth/login" className="text-sm text-gray-600 hover:text-gray-900 transition-colors px-4 py-2">
+            Log in
+          </Link>
+          <Link
+            href="/auth/register"
+            className="text-sm bg-gray-900 text-white px-5 py-2.5 rounded-full font-medium hover:bg-gray-800 transition-colors"
           >
-            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+            Get started
+          </Link>
         </div>
-      </nav>
-
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-background/98 dark:bg-peeplx-bg/98 backdrop-blur-lg md:hidden">
-          <div className="flex flex-col items-center justify-center h-full gap-8">
-            {navLinks.map((link) => (
-              <button
-                key={link.id}
-                onClick={() => scrollToSection(link.id)}
-                className="text-2xl font-display text-foreground dark:text-peeplx-text hover:text-accent dark:hover:text-peeplx-accent transition-colors"
-              >
-                {link.label}
-              </button>
-            ))}
-            <div className="flex flex-col items-center gap-4 mt-8">
-              <ThemeToggle />
-              <Link href="/auth/login" className="text-lg text-muted-foreground dark:text-peeplx-text-secondary hover:text-foreground dark:hover:text-peeplx-text transition-colors">
-                Log in
-              </Link>
-              <Link href="/auth/register" className="btn-accent text-lg py-3 px-8">
-                Get started
-              </Link>
-            </div>
-          </div>
+        <button className="md:hidden p-2 text-gray-700" onClick={() => setMenuOpen(!menuOpen)}>
+          {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+      </div>
+      {menuOpen && (
+        <div className="md:hidden bg-white border-t border-gray-100 px-5 py-6 flex flex-col gap-4">
+          <Link href="/auth/login" className="text-base text-gray-700" onClick={() => setMenuOpen(false)}>
+            Log in
+          </Link>
+          <Link
+            href="/auth/register"
+            className="text-center py-2.5 bg-gray-900 text-white rounded-full text-sm font-medium"
+            onClick={() => setMenuOpen(false)}
+          >
+            Get started
+          </Link>
         </div>
       )}
-    </>
-  );
+    </header>
+  )
 }

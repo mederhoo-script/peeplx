@@ -29,7 +29,7 @@ export async function GET(
     const { id } = await params
     const supabase = createServerClient()
 
-    const [{ data: user }, { data: trustScore }, { data: wallet }, { count: escrowCount }] = await Promise.all([
+    const [{ data: user }, { data: trustScore }, { data: wallet }, { count: buyerCount }, { count: sellerCount }] = await Promise.all([
       supabase
         .from('User')
         .select('id, email, firstName, lastName, username, phone, role, status, isEmailVerified, idVerificationStatus, trustScore, createdAt, updatedAt')
@@ -37,7 +37,8 @@ export async function GET(
         .single(),
       supabase.from('TrustScore').select('*').eq('userId', id).maybeSingle(),
       supabase.from('Wallet').select('*').eq('userId', id).maybeSingle(),
-      supabase.from('EscrowTransaction').select('*', { count: 'exact', head: true }).or(`buyerId.eq.${id},sellerId.eq.${id}`),
+      supabase.from('EscrowTransaction').select('*', { count: 'exact', head: true }).eq('buyerId', id),
+      supabase.from('EscrowTransaction').select('*', { count: 'exact', head: true }).eq('sellerId', id),
     ])
 
     if (!user) {
@@ -46,7 +47,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      data: { ...user, trustScoreData: trustScore, wallet, escrowCount: escrowCount ?? 0 },
+      data: { ...user, trustScoreData: trustScore, wallet, escrowCount: (buyerCount ?? 0) + (sellerCount ?? 0) },
     })
   } catch (error) {
     console.error('Admin get user error:', error)

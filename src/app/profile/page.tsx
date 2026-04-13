@@ -83,7 +83,12 @@ export default function ProfilePage() {
         throw new Error(d.error || 'Verification failed')
       }
       const d = await res.json()
-      setStatus((prev) => prev ? { ...prev, [VERIFICATION_ITEMS.find((i) => i.type === type)!.field]: true, score: d.data.trustScore } : prev)
+      setStatus((prev) => {
+        if (!prev) return prev
+        const item = VERIFICATION_ITEMS.find((i) => i.type === type)
+        if (!item) return prev
+        return { ...prev, [item.field]: true, score: d.data.trustScore }
+      })
     } catch (err: any) {
       setError(err.message)
     } finally {

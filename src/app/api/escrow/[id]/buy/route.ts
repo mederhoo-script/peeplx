@@ -51,15 +51,21 @@ export async function POST(
     }
 
     // Claim the listing by setting buyerId
-    const { error: claimError } = await supabase
+    const { data: claimedEscrow, error: claimError } = await supabase
       .from('EscrowTransaction')
       .update({ buyerId: tokenPayload.userId })
       .eq('id', id)
       .is('buyerId', null) // optimistic lock — only update if still unclaimed
+      .select('id')
+      .maybeSingle()
 
     if (claimError) {
       console.error('Claim escrow error:', claimError)
       return NextResponse.json({ error: 'Failed to claim listing' }, { status: 500 })
+    }
+
+    if (!claimedEscrow) {
+      return NextResponse.json({ error: 'This listing has just been claimed by another buyer' }, { status: 409 })
     }
 
     // Fetch buyer details for Monnify

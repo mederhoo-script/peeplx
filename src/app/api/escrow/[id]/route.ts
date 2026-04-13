@@ -140,9 +140,10 @@ export async function PATCH(
       .single()
 
     // Update trust scores for both parties on outcome-changing actions
-    if (trustOutcome && escrow.status !== updateData.status) {
+    if (trustOutcome !== null && escrow.status !== updateData.status) {
+      const outcome = trustOutcome
       const partyIds = [escrow.sellerId, ...(escrow.buyerId ? [escrow.buyerId] : [])]
-      await Promise.all(partyIds.map((uid) => updateTrustScoreForTransaction(uid, trustOutcome!)))
+      await Promise.all(partyIds.map((uid) => updateTrustScoreForTransaction(uid, outcome)))
     }
 
     const involvedIds = [escrow.sellerId, ...(escrow.buyerId ? [escrow.buyerId] : [])]

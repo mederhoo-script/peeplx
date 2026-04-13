@@ -76,7 +76,7 @@ export function calculateTrustScore(data: {
   // Completion rate bonus (max 20 points)
   if (data.totalTransactions > 0) {
     const completionRate = data.completedTransactions / data.totalTransactions
-    score += Math.round(completionRate * 20)
+    score += Math.floor(completionRate * 20)
   }
 
   // Penalties

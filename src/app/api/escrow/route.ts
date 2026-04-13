@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     ])
 
     // Enrich with buyer/seller user data
-    const userIds = [...new Set((escrows || []).flatMap((e) => [e.buyerId, e.sellerId]))]
+    const userIds = [...new Set((escrows || []).flatMap((e) => [e.buyerId, e.sellerId].filter(Boolean)))]
     let userMap: Record<string, UserShape> = {}
 
     if (userIds.length > 0) {
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
 
     const enriched = (escrows || []).map((e) => ({
       ...e,
-      buyer: userMap[e.buyerId],
+      buyer: e.buyerId ? userMap[e.buyerId] : null,
       seller: userMap[e.sellerId],
     }))
 
@@ -87,13 +87,68 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, description, sellerEmail, sellerId: sellerIdDirect, amount, currency, transactionType, deliveryDays, terms } = body
+    const {
+      title,
+      description,
+      sellerEmail,
+      sellerId: sellerIdDirect,
+      amount,
+      currency,
+      transactionType,
+      deliveryDays,
+      terms,
+      // When role='seller', the authenticated user IS the seller creating a listing
+      role,
+    } = body
 
     if (!title || !amount || !transactionType) {
       return NextResponse.json({ error: 'Missing required fields: title, amount, transactionType' }, { status: 400 })
     }
 
     const supabase = createServerClient()
+
+    // ── Seller-initiated listing ──────────────────────────────────────────────
+    if (role === 'seller') {
+      const buyerLinkToken = crypto.randomUUID()
+
+      const { data: escrow, error: escrowError } = await supabase
+        .from('EscrowTransaction')
+        .insert({
+          title,
+          description: description || null,
+          buyerId: null,
+          sellerId: tokenPayload.userId,
+          amount: Number(amount),
+          currency: currency || 'NGN',
+          transactionType: transactionType || 'GOODS',
+          deliveryDays: deliveryDays ? Number(deliveryDays) : null,
+          terms: terms || null,
+          status: 'PENDING',
+          sellerInitiated: true,
+          buyerLinkToken,
+        })
+        .select('*')
+        .single()
+
+      if (escrowError || !escrow) {
+        console.error('Create seller listing error:', escrowError)
+        return NextResponse.json({ error: 'Failed to create listing' }, { status: 500 })
+      }
+
+      const { data: seller } = await supabase
+        .from('User')
+        .select('id, email, firstName, lastName')
+        .eq('id', tokenPayload.userId)
+        .single()
+
+      return NextResponse.json({
+        success: true,
+        data: { ...escrow, buyer: null, seller },
+        buyerLink: `${process.env.NEXT_PUBLIC_APP_URL || ''}/product/${buyerLinkToken}`,
+      })
+    }
+
+    // ── Buyer-initiated escrow (original flow) ────────────────────────────────
     let sellerId: string | null = sellerIdDirect || null
 
     if (!sellerId && sellerEmail) {
@@ -132,6 +187,7 @@ export async function POST(request: NextRequest) {
         deliveryDays: deliveryDays ? Number(deliveryDays) : null,
         terms: terms || null,
         status: 'PENDING',
+        sellerInitiated: false,
       })
       .select('*')
       .single()

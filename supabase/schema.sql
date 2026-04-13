@@ -22,6 +22,7 @@ create table if not exists "User" (
   "lastLoginAt"          timestamptz,
   "isEmailVerified"      boolean     not null default false,
   "idVerificationStatus" text        not null default 'UNVERIFIED',  -- UNVERIFIED | PENDING | VERIFIED | REJECTED
+  "trustScore"           integer     not null default 0,             -- denormalised from TrustScore
   "createdAt"            timestamptz not null default now(),
   "updatedAt"            timestamptz not null default now()
 );
@@ -50,6 +51,10 @@ create table if not exists "TrustScore" (
   "emailVerified"         boolean     not null default false,
   "phoneVerified"         boolean     not null default false,
   "idVerified"            boolean     not null default false,
+  "bvnVerified"           boolean     not null default false,
+  "ninVerified"           boolean     not null default false,
+  "faceVerified"          boolean     not null default false,
+  "addressVerified"       boolean     not null default false,
   "lastCalculatedAt"      timestamptz not null default now(),
   "createdAt"             timestamptz not null default now(),
   "updatedAt"             timestamptz not null default now()
@@ -57,24 +62,26 @@ create table if not exists "TrustScore" (
 
 -- ── ESCROW TRANSACTION ───────────────────────────────────────────────────────
 create table if not exists "EscrowTransaction" (
-  id                 text        primary key default gen_random_uuid()::text,
-  title              text        not null,
-  description        text,
-  "buyerId"          text        not null references "User"(id),
-  "sellerId"         text        not null references "User"(id),
-  amount             numeric     not null,
-  currency           text        not null default 'NGN',
-  status             text        not null default 'PENDING',  -- PENDING | FUNDED | IN_PROGRESS | COMPLETED | DISPUTED | CANCELLED | REFUNDED
-  "transactionType"  text        not null default 'GOODS',   -- GOODS | SERVICES | DIGITAL | OTHER
-  "deliveryDays"     integer,
-  "deliveryDeadline" timestamptz,
-  terms              text,
-  "fundedAt"         timestamptz,
-  "completedAt"      timestamptz,
-  "disputedAt"       timestamptz,
-  "cancelledAt"      timestamptz,
-  "createdAt"        timestamptz not null default now(),
-  "updatedAt"        timestamptz not null default now()
+  id                  text        primary key default gen_random_uuid()::text,
+  title               text        not null,
+  description         text,
+  "buyerId"           text        references "User"(id),             -- nullable for seller-initiated listings
+  "sellerId"          text        not null references "User"(id),
+  amount              numeric     not null,
+  currency            text        not null default 'NGN',
+  status              text        not null default 'PENDING',        -- PENDING | FUNDED | IN_PROGRESS | COMPLETED | DISPUTED | CANCELLED | REFUNDED
+  "transactionType"   text        not null default 'GOODS',          -- GOODS | SERVICES | DIGITAL | OTHER
+  "deliveryDays"      integer,
+  "deliveryDeadline"  timestamptz,
+  terms               text,
+  "sellerInitiated"   boolean     not null default false,            -- true when seller creates listing awaiting buyer
+  "buyerLinkToken"    text        unique,                            -- unique token for /product/<token> buyer link
+  "fundedAt"          timestamptz,
+  "completedAt"       timestamptz,
+  "disputedAt"        timestamptz,
+  "cancelledAt"       timestamptz,
+  "createdAt"         timestamptz not null default now(),
+  "updatedAt"         timestamptz not null default now()
 );
 
 -- ── PAYMENT ──────────────────────────────────────────────────────────────────

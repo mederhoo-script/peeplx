@@ -51,19 +51,21 @@ export function calculateTrustScore(data: {
   emailVerified: boolean
   phoneVerified: boolean
   idVerified: boolean
+  bvnVerified?: boolean
+  ninVerified?: boolean
+  faceVerified?: boolean
+  addressVerified?: boolean
 }): number {
   let score = 0
 
-  // Base score from completed transactions (max 40 points)
-  if (data.totalTransactions > 0) {
-    const completionRate = data.completedTransactions / data.totalTransactions
-    score += completionRate * 40
-  }
-
-  // Verification bonus (max 30 points)
+  // Verification bonuses (max 60 points)
   if (data.emailVerified) score += 10
   if (data.phoneVerified) score += 10
   if (data.idVerified) score += 10
+  if (data.bvnVerified) score += 10
+  if (data.ninVerified) score += 10
+  if (data.faceVerified) score += 5
+  if (data.addressVerified) score += 5
 
   // Transaction volume bonus (max 20 points)
   if (data.totalTransactions >= 1) score += 5
@@ -71,9 +73,15 @@ export function calculateTrustScore(data: {
   if (data.totalTransactions >= 10) score += 5
   if (data.totalTransactions >= 20) score += 5
 
+  // Completion rate bonus (max 20 points)
+  if (data.totalTransactions > 0) {
+    const completionRate = data.completedTransactions / data.totalTransactions
+    score += Math.floor(completionRate * 20)
+  }
+
   // Penalties
   if (data.disputeCount > 0) {
-    score -= data.disputeCount * 5 // -5 points per dispute
+    score -= data.disputeCount * 10 // -10 points per dispute
   }
   if (data.cancelledCount > 0) {
     score -= data.cancelledCount * 2 // -2 points per cancellation

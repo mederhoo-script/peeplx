@@ -270,6 +270,26 @@ export default function DashboardPage() {
                     </div>
                     <ArrowRight className="w-4 h-4 text-white/30 group-hover:text-peeplx-accent transition-colors" />
                   </Link>
+                  <Link
+                    href="/sell/new"
+                    className="flex items-center justify-between p-3 rounded-xl border border-white/10 hover:border-peeplx-accent/30 hover:bg-white/5 transition-all group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Plus className="w-4 h-4 text-peeplx-accent" />
+                      <span className="text-sm text-peeplx-text">Sell Something</span>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-white/30 group-hover:text-peeplx-accent transition-colors" />
+                  </Link>
+                  <Link
+                    href="/profile"
+                    className="flex items-center justify-between p-3 rounded-xl border border-white/10 hover:border-peeplx-accent/30 hover:bg-white/5 transition-all group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <TrendingUp className="w-4 h-4 text-peeplx-accent" />
+                      <span className="text-sm text-peeplx-text">Boost Trust Score</span>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-white/30 group-hover:text-peeplx-accent transition-colors" />
+                  </Link>
                 </div>
               </div>
 

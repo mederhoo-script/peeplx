@@ -6,6 +6,7 @@ export type EscrowStatus = 'PENDING' | 'FUNDED' | 'IN_PROGRESS' | 'COMPLETED' | 
 export type TransactionType = 'GOODS' | 'SERVICES' | 'DIGITAL' | 'OTHER'
 export type PaymentStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'REFUNDED'
 export type PaymentChannel = 'BANK_TRANSFER' | 'CARD' | 'USSD' | 'WALLET'
+export type VerificationType = 'email' | 'phone' | 'bvn' | 'nin' | 'face' | 'address' | 'id'
 
 export interface User {
   id: string
@@ -38,7 +39,7 @@ export interface EscrowTransaction {
   id: string
   title: string
   description: string
-  buyerId: string
+  buyerId: string | null
   sellerId: string
   amount: number
   currency: string
@@ -47,6 +48,8 @@ export interface EscrowTransaction {
   deliveryDays?: number
   deliveryDeadline?: Date
   terms?: string
+  sellerInitiated: boolean
+  buyerLinkToken?: string
   fundedAt?: Date
   completedAt?: Date
   disputedAt?: Date
@@ -82,6 +85,10 @@ export interface TrustScore {
   emailVerified: boolean
   phoneVerified: boolean
   idVerified: boolean
+  bvnVerified: boolean
+  ninVerified: boolean
+  faceVerified: boolean
+  addressVerified: boolean
   lastCalculatedAt: Date
   createdAt: Date
   updatedAt: Date

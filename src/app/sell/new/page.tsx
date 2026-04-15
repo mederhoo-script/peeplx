@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -28,6 +28,15 @@ export default function SellNewPage() {
   const [error, setError] = useState('')
   const [buyerLink, setBuyerLink] = useState('')
   const [copied, setCopied] = useState(false)
+
+  // Redirect unauthenticated users to login
+  useEffect(() => {
+    fetch('/api/auth/me').then((res) => {
+      if (res.status === 401) {
+        router.push('/auth/login?redirect=/sell/new')
+      }
+    })
+  }, [router])
 
   const [form, setForm] = useState({
     title: '',
@@ -84,6 +93,11 @@ export default function SellNewPage() {
       })
 
       const data = await response.json()
+
+      if (response.status === 401) {
+        router.push('/auth/login?redirect=/sell/new')
+        return
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to create listing')

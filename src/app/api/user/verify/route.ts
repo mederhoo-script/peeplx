@@ -58,10 +58,15 @@ export async function POST(request: NextRequest) {
 
     const column = VERIFICATION_COLUMN[type]
 
-    await supabase
+    const { error: updateError } = await supabase
       .from('TrustScore')
       .update({ [column]: true })
       .eq('userId', tokenPayload.userId)
+
+    if (updateError) {
+      console.error('TrustScore update error:', updateError)
+      return NextResponse.json({ error: 'Failed to save verification status' }, { status: 500 })
+    }
 
     // Also update User.isEmailVerified for email type
     if (type === 'email') {

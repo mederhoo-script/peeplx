@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Shield, ArrowLeft, ChevronRight, Package, Briefcase, Monitor, MoreHorizontal, Loader2 } from 'lucide-react'
@@ -23,6 +23,15 @@ export default function NewEscrowPage() {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Redirect unauthenticated users to login
+  useEffect(() => {
+    fetch('/api/auth/me').then((res) => {
+      if (res.status === 401) {
+        router.push('/auth/login?redirect=/escrow/new')
+      }
+    })
+  }, [router])
 
   const [form, setForm] = useState({
     title: '',
@@ -80,6 +89,11 @@ export default function NewEscrowPage() {
       })
 
       const data = await response.json()
+
+      if (response.status === 401) {
+        router.push('/auth/login?redirect=/escrow/new')
+        return
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to create escrow')

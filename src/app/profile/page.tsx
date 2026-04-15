@@ -78,6 +78,10 @@ export default function ProfilePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type }),
       })
+      if (res.status === 401) {
+        router.push('/auth/login?redirect=/profile')
+        return
+      }
       if (!res.ok) {
         const d = await res.json()
         throw new Error(d.error || 'Verification failed')

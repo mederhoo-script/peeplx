@@ -54,6 +54,10 @@ export default function EscrowDetailPage() {
   const fetchEscrow = async (id: string) => {
     try {
       const response = await fetch(`/api/escrow/${id}`)
+      if (response.status === 401) {
+        router.push(`/auth/login?redirect=/escrow/${id}`)
+        return
+      }
       if (!response.ok) {
         throw new Error('Escrow not found')
       }
@@ -331,9 +335,9 @@ export default function EscrowDetailPage() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-peeplx-text">
-                          {escrow.buyer.firstName} {escrow.buyer.lastName}
+                          {escrow.buyer ? `${escrow.buyer.firstName} ${escrow.buyer.lastName}` : 'Awaiting buyer'}
                         </p>
-                        <p className="text-xs text-peeplx-text-secondary">{escrow.buyer.email}</p>
+                        <p className="text-xs text-peeplx-text-secondary">{escrow.buyer?.email || 'Not yet assigned'}</p>
                       </div>
                     </div>
                   </div>

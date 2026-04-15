@@ -78,6 +78,10 @@ export async function POST(request: NextRequest) {
         emailVerified: false,
         phoneVerified: false,
         idVerified: false,
+        bvnVerified: false,
+        ninVerified: false,
+        faceVerified: false,
+        addressVerified: false,
       }),
     ])
 

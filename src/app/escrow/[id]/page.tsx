@@ -136,7 +136,7 @@ export default function EscrowDetailPage() {
   }
 
   const buyerLink = escrow?.buyerLinkToken
-    ? `${window.location.origin}/product/${escrow.buyerLinkToken}`
+    ? `${process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')}/product/${escrow.buyerLinkToken}`
     : null
 
   const copyBuyerLink = () => {

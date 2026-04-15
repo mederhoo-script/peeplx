@@ -18,7 +18,9 @@ interface EscrowDetails {
   transactionType: string
   deliveryDays: number
   terms: string
-  buyer: { id: string; firstName: string; lastName: string; email: string }
+  sellerInitiated: boolean
+  buyerLinkToken: string | null
+  buyer: { id: string; firstName: string; lastName: string; email: string } | null
   seller: { id: string; firstName: string; lastName: string; email: string }
   payments: Array<{ id: string; amount: number; status: string; channel: string; createdAt: string }>
   createdAt: string
@@ -44,11 +46,17 @@ export default function EscrowDetailPage() {
   const [paymentLoading, setPaymentLoading] = useState(false)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   useEffect(() => {
     if (params.id) {
       fetchEscrow(params.id as string)
     }
+    fetch('/api/auth/me')
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d?.user?.id) setCurrentUserId(d.user.id) })
+      .catch(() => {})
   }, [params.id])
 
   const fetchEscrow = async (id: string) => {
@@ -126,6 +134,20 @@ export default function EscrowDetailPage() {
       setTimeout(() => setCopied(false), 2000)
     }
   }
+
+  const buyerLink = escrow?.buyerLinkToken
+    ? `${window.location.origin}/product/${escrow.buyerLinkToken}`
+    : null
+
+  const copyBuyerLink = () => {
+    if (buyerLink) {
+      navigator.clipboard.writeText(buyerLink)
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
+    }
+  }
+
+  const isSeller = !!(currentUserId && escrow && escrow.seller?.id === currentUserId)
 
   const formatAmount = (amount: number) => {
     return `₦${Number(amount).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`
@@ -235,7 +257,7 @@ export default function EscrowDetailPage() {
 
                 {/* Actions */}
                 <div className="mt-6 flex flex-wrap gap-3">
-                  {escrow.status === 'PENDING' && (
+                  {escrow.status === 'PENDING' && !isSeller && (
                     <button
                       onClick={handlePayment}
                       disabled={paymentLoading}
@@ -248,6 +270,11 @@ export default function EscrowDetailPage() {
                       )}
                       Fund Escrow
                     </button>
+                  )}
+                  {escrow.status === 'PENDING' && isSeller && !escrow.buyer && (
+                    <p className="text-sm text-peeplx-text-secondary">
+                      Only the buyer can fund this escrow
+                    </p>
                   )}
                   {escrow.status === 'IN_PROGRESS' && (
                     <>
@@ -323,6 +350,39 @@ export default function EscrowDetailPage() {
 
             {/* Sidebar */}
             <div className="space-y-6">
+              {/* Share with Buyer (seller-initiated, no buyer yet) */}
+              {escrow.sellerInitiated && !escrow.buyer && buyerLink && (
+                <div className="card-dark p-6">
+                  <h3 className="font-display font-bold text-lg text-peeplx-text mb-1">Share with Buyer</h3>
+                  <p className="text-xs text-peeplx-text-secondary mb-4">
+                    Send this link to your buyer. They&apos;ll review the listing and pay securely through PeeplX.
+                  </p>
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/10 mb-3">
+                    <span className="flex-1 text-xs text-peeplx-text font-mono truncate">{buyerLink}</span>
+                    <button
+                      onClick={copyBuyerLink}
+                      className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors text-peeplx-text-secondary hover:text-peeplx-accent"
+                      title="Copy link"
+                    >
+                      {linkCopied ? <CheckCircle2 className="w-4 h-4 text-peeplx-accent" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                    <a
+                      href={buyerLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors text-peeplx-text-secondary hover:text-peeplx-accent"
+                      title="Open link"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </div>
+                  <button onClick={copyBuyerLink} className="btn-accent w-full flex items-center justify-center gap-2 text-sm">
+                    {linkCopied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {linkCopied ? 'Copied!' : 'Copy Buyer Link'}
+                  </button>
+                </div>
+              )}
+
               {/* Parties */}
               <div className="card-dark p-6">
                 <h3 className="font-display font-bold text-lg text-peeplx-text mb-4">Parties</h3>

@@ -1,7 +1,6 @@
 # PeeplX — Supabase Migrations
 
-Run each migration **in order** in your Supabase project:
-**Supabase Dashboard → SQL Editor → New Query → paste the file → Run**
+Run each migration **in order** in your Supabase project — Supabase Dashboard → SQL Editor → New Query → paste the file → Run.
 
 | File | Description |
 |------|-------------|

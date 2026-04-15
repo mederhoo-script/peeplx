@@ -132,7 +132,14 @@ export async function POST(request: NextRequest) {
 
       if (escrowError || !escrow) {
         console.error('Create seller listing error:', escrowError)
-        return NextResponse.json({ error: 'Failed to create listing' }, { status: 500 })
+        return NextResponse.json(
+          {
+            error: 'Failed to create listing',
+            detail: escrowError?.message ?? null,
+            hint: escrowError?.hint ?? null,
+          },
+          { status: 500 }
+        )
       }
 
       const { data: seller } = await supabase
@@ -194,7 +201,14 @@ export async function POST(request: NextRequest) {
 
     if (escrowError || !escrow) {
       console.error('Create escrow error:', escrowError)
-      return NextResponse.json({ error: 'Failed to create escrow' }, { status: 500 })
+      return NextResponse.json(
+        {
+          error: 'Failed to create escrow',
+          detail: escrowError?.message ?? null,
+          hint: escrowError?.hint ?? null,
+        },
+        { status: 500 }
+      )
     }
 
     const { data: users } = await supabase

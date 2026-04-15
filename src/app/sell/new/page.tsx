@@ -102,7 +102,10 @@ export default function SellNewPage() {
       }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create listing')
+        const errMsg = data.detail
+          ? `${data.error}: ${data.detail}${data.hint ? ` — ${data.hint}` : ''}`
+          : data.error || 'Failed to create listing'
+        throw new Error(errMsg)
       }
 
       setBuyerLink(data.buyerLink)

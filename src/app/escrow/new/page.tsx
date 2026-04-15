@@ -30,6 +30,8 @@ export default function NewEscrowPage() {
       if (res.status === 401) {
         router.push('/auth/login?redirect=/escrow/new')
       }
+    }).catch(() => {
+      // Network error — let the submit attempt surface the auth failure
     })
   }, [router])
 

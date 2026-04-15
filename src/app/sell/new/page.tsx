@@ -35,6 +35,8 @@ export default function SellNewPage() {
       if (res.status === 401) {
         router.push('/auth/login?redirect=/sell/new')
       }
+    }).catch(() => {
+      // Network error — let the submit attempt surface the auth failure
     })
   }, [router])
 
